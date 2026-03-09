@@ -1,0 +1,19 @@
+{
+  "name": "growth-hub-webc",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dimitar-pechev/growth-hub-webc.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dimitar-pechev/growth-hub-webc/issues"
+  },
+  "homepage": "https://github.com/dimitar-pechev/growth-hub-webc#readme",
+  "description": ""
+}
