@@ -6,6 +6,48 @@
     <title>Growth Hub</title>
   </head>
   <body>
+    <div
+      style="
+        padding: 20px;
+        border: 1px solid #000;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+      "
+    >
+      <label for="marketing-consent">Marketing Consent</label>
+      <input type="checkbox" id="marketing-consent" />
+      <script>
+        // set to true by default, override from cookie value, if present
+        let isMarketingConsentGiven = true;
+
+        try {
+          const storedConsent = document.cookie
+            .split(";")
+            .find((row) => row.trim().startsWith("gh-webc-consent-cookie"))
+            ?.split("=")[1];
+
+          const decodedConsent = decodeURIComponent(storedConsent);
+          const consent = JSON.parse(decodedConsent);
+
+          isMarketingConsentGiven = consent.state.marketing;
+        } catch {}
+
+        const marketingConsentCheckbox =
+          document.getElementById("marketing-consent");
+        marketingConsentCheckbox.checked = isMarketingConsentGiven;
+
+        marketingConsentCheckbox.addEventListener("change", (event) => {
+          const consent = {
+            marketing: event.target.checked,
+          };
+
+          document
+            .querySelector("growth-hub")
+            .setAttribute("consent", JSON.stringify(consent));
+        });
+      </script>
+    </div>
     <growth-hub
       slug="dpechev3"
       initial-route="dashboard"
