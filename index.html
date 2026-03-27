@@ -8,10 +8,18 @@
   <body>
     <!-- control panel -->
     <div style="margin-bottom: 10px; border: 1px solid black; padding: 10px">
-      <!-- populated via script below -->
-      <label for="environment-selector">Environment: </label>
-      <select id="environment-selector"></select>
-      (affects both the API base URL and the source script URL)
+      <div style="display: flex; gap: 10px">
+        <div>
+          <!-- populated via script below -->
+          <label for="base-url-selector">API Base URL: </label>
+          <select id="base-url-selector"></select>
+        </div>
+        <div>
+          <!-- populated via script below -->
+          <label for="build-version-source-selector">Script Version: </label>
+          <select id="build-version-source-selector"></select>
+        </div>
+      </div>
       <hr />
 
       <!-- populated via script below -->
@@ -36,31 +44,64 @@
     <!-- control panel scripts -->
     <script>
       // populate environment selector with options for the different environments
-      const environmentSelector = document.getElementById(
-        "environment-selector",
-      );
-      const environments = [
+      const baseUrlSelector = document.getElementById("base-url-selector");
+      const baseUrls = [
         "https://e-commerce-staging.officernd.com",
         "https://e-commerce.officernd.com",
       ];
-      environments.forEach((environment) => {
+      baseUrls.forEach((environment) => {
         const option = document.createElement("option");
         option.value = environment;
         option.textContent = environment;
-        environmentSelector.appendChild(option);
+        baseUrlSelector.appendChild(option);
       });
-      const DEFAULT_ENVIRONMENT = "https://e-commerce-staging.officernd.com";
-      environmentSelector.value =
-        localStorage.getItem("environment") || DEFAULT_ENVIRONMENT;
+      const DEFAULT_BASE_URL = "https://e-commerce-staging.officernd.com";
+      baseUrlSelector.value =
+        localStorage.getItem("base-url") || DEFAULT_BASE_URL;
 
       // sets the app API url
-      const selectedEnvironment =
-        localStorage.getItem("environment") || DEFAULT_ENVIRONMENT;
-      window.__API_BASE_URL__ = selectedEnvironment;
-      console.log("🔧 API Base URL configured:", selectedEnvironment);
+      const selectedBaseUrl =
+        localStorage.getItem("base-url") || DEFAULT_BASE_URL;
+      window.__API_BASE_URL__ = selectedBaseUrl;
+      console.log("🔧 API Base URL configured:", selectedBaseUrl);
 
-      environmentSelector.addEventListener("change", (event) => {
-        localStorage.setItem("environment", event.target.value);
+      baseUrlSelector.addEventListener("change", (event) => {
+        localStorage.setItem("base-url", event.target.value);
+        window.location.hash = "";
+        window.location.reload();
+      });
+
+      const buildVersionSources = [
+        {
+          value: "https://e-commerce-staging.officernd.com/webc",
+          label: "Staging",
+        },
+        {
+          value: "https://e-commerce.officernd.com/webc",
+          label: "Production",
+        },
+      ];
+      const buildVersionSourcesSelector = document.getElementById(
+        "build-version-source-selector",
+      );
+      buildVersionSources.forEach((buildVersionSource) => {
+        const option = document.createElement("option");
+        option.value = buildVersionSource.value;
+        option.textContent = buildVersionSource.label;
+        buildVersionSourcesSelector.appendChild(option);
+      });
+      const DEFAULT_BUILD_VERSION_SOURCE =
+        "https://e-commerce-staging.officernd.com/webc";
+      buildVersionSourcesSelector.value =
+        localStorage.getItem("build-version-source") ||
+        DEFAULT_BUILD_VERSION_SOURCE;
+
+      const sourceScript = document.createElement("script");
+      sourceScript.src = buildVersionSourcesSelector.value;
+      document.body.appendChild(sourceScript);
+
+      buildVersionSourcesSelector.addEventListener("change", (event) => {
+        localStorage.setItem("build-version-source", event.target.value);
         window.location.hash = "";
         window.location.reload();
       });
@@ -89,7 +130,7 @@
       };
 
       const orgSelector = document.getElementById("org-selector");
-      orgs[selectedEnvironment].forEach((org) => {
+      orgs[selectedBaseUrl].forEach((org) => {
         const button = document.createElement("button");
         button.textContent = org;
         orgSelector.appendChild(button);
@@ -125,20 +166,16 @@
       });
 
       const DEFAULT_SLUG =
-        selectedEnvironment === "https://e-commerce-staging.officernd.com"
+        selectedBaseUrl === "https://e-commerce-staging.officernd.com"
           ? "dpechev3"
           : "mindspace-us";
-
-      const sourceScript = document.createElement("script");
-      sourceScript.src = `${selectedEnvironment}/webc`;
-      document.body.appendChild(sourceScript);
 
       // fetch the actual available languages for the targeted org and populate the language selector with the available options
       const orgSlug = window.location.hash.split("/")[1] || DEFAULT_SLUG;
       document.querySelector("growth-hub")?.setAttribute("slug", orgSlug);
 
       const languages = fetch(
-        `${selectedEnvironment}/i/${orgSlug}/localization/translations`,
+        `${selectedBaseUrl}/i/${orgSlug}/localization/translations`,
       )
         .then((res) => res.json())
         .then((languages) => {
