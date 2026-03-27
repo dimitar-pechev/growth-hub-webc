@@ -6,7 +6,162 @@
     <title>Growth Hub</title>
   </head>
   <body>
+    <!-- control panel -->
+    <div style="margin-bottom: 10px; border: 1px solid black; padding: 10px">
+      <!-- populated via script below -->
+      <label for="environment-selector">Environment: </label>
+      <select id="environment-selector"></select>
+      (affects both the API base URL and the source script URL)
+      <hr />
+
+      <!-- populated via script below -->
+      <div id="org-selector"></div>
+      <div>
+        <input
+          type="text"
+          id="org-slug-input"
+          placeholder="Type another slug..."
+        />
+        <button id="set-org-slug-button">Set</button>
+      </div>
+      <hr />
+
+      <!-- populated via script below -->
+      <label for="language-selector">Language: </label>
+      <select id="language-selector"></select>
+    </div>
+
     <growth-hub slug="dpechev3" initial-route="dashboard"></growth-hub>
-    <script src="https://e-commerce-staging.officernd.com/webc"></script>
+
+    <!-- control panel scripts -->
+    <script>
+      // populate environment selector with options for the different environments
+      const environmentSelector = document.getElementById(
+        "environment-selector",
+      );
+      const environments = [
+        "https://e-commerce-staging.officernd.com",
+        "https://e-commerce.officernd.com",
+      ];
+      environments.forEach((environment) => {
+        const option = document.createElement("option");
+        option.value = environment;
+        option.textContent = environment;
+        environmentSelector.appendChild(option);
+      });
+      const DEFAULT_ENVIRONMENT = "https://e-commerce-staging.officernd.com";
+      environmentSelector.value =
+        localStorage.getItem("environment") || DEFAULT_ENVIRONMENT;
+
+      // sets the app API url
+      const selectedEnvironment =
+        localStorage.getItem("environment") || DEFAULT_ENVIRONMENT;
+      window.__API_BASE_URL__ = selectedEnvironment;
+      console.log("🔧 API Base URL configured:", selectedEnvironment);
+
+      environmentSelector.addEventListener("change", (event) => {
+        localStorage.setItem("environment", event.target.value);
+        window.location.hash = "";
+        window.location.reload();
+      });
+
+      // populate org selector with buttons for targeted dev orgs on staging and production
+      const STAGING_ORGS = [
+        "dpechev3",
+        "nmirchev",
+        "niko-clonable",
+        "mdonev",
+        "djenkov-4",
+        "nikispace",
+      ];
+
+      const PRODUCTION_ORGS = [
+        "mindspace-us",
+        "mindspace-de",
+        "mindspace-il",
+        "xwhy",
+        "quantumquarters",
+      ];
+
+      const orgs = {
+        "https://e-commerce-staging.officernd.com": STAGING_ORGS,
+        "https://e-commerce.officernd.com": PRODUCTION_ORGS,
+      };
+
+      const orgSelector = document.getElementById("org-selector");
+      orgs[selectedEnvironment].forEach((org) => {
+        const button = document.createElement("button");
+        button.textContent = org;
+        orgSelector.appendChild(button);
+
+        // switch to the targeted org on button click
+        button.addEventListener("click", (event) => {
+          const orgSlug = event.target.textContent;
+          window.location.hash = `/${orgSlug}`;
+          window.location.reload();
+        });
+      });
+
+      const orgSlugInput = document.getElementById("org-slug-input");
+
+      const customInputChangeHandler = (event) => {
+        const orgSlug = orgSlugInput.value;
+        window.location.hash = `/${orgSlug}`;
+        window.location.reload();
+      };
+
+      orgSlugInput.addEventListener(
+        "keydown",
+        (event) => event.key === "Enter" && customInputChangeHandler(event),
+      );
+      const setOrgSlugButton = document.getElementById("set-org-slug-button");
+      setOrgSlugButton.addEventListener("click", customInputChangeHandler);
+
+      // change the html lang attribute on language selector value change (observed and synced with the growth-hub language in the web component)
+      const languageSelector = document.getElementById("language-selector");
+      languageSelector.addEventListener("change", (event) => {
+        const selectedLanguage = event.target.value;
+        document.documentElement.lang = selectedLanguage;
+      });
+
+      const DEFAULT_SLUG =
+        selectedEnvironment === "https://e-commerce-staging.officernd.com"
+          ? "dpechev3"
+          : "mindspace-us";
+
+      const sourceScript = document.createElement("script");
+      sourceScript.src = `${selectedEnvironment}/webc`;
+      document.body.appendChild(sourceScript);
+
+      // fetch the actual available languages for the targeted org and populate the language selector with the available options
+      const orgSlug = window.location.hash.split("/")[1] || DEFAULT_SLUG;
+      document.querySelector("growth-hub")?.setAttribute("slug", orgSlug);
+
+      const languages = fetch(
+        `${selectedEnvironment}/i/${orgSlug}/localization/translations`,
+      )
+        .then((res) => res.json())
+        .then((languages) => {
+          languages.forEach((language) => {
+            const option = document.createElement("option");
+            option.value = language.locale;
+            option.textContent = language.label;
+            languageSelector.appendChild(option);
+          });
+
+          const initialValue = document.documentElement.lang;
+          const initialLanguageMeta = languages.find(
+            (language) =>
+              language.locale === initialValue ||
+              language.locale
+                .toLowerCase()
+                .startsWith(initialValue.toLowerCase()),
+          );
+
+          languageSelector.value =
+            initialLanguageMeta?.locale ??
+            initialLanguageMeta.find((language) => language.default)?.locale;
+        });
+    </script>
   </body>
 </html>
